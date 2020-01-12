@@ -294,7 +294,7 @@ let rec compile sexp =
       fail_invalid ~msg:(Some x)
   | List (Symbol x :: xs) ->
     let t1 = List.map ~f:compile xs |> List.concat in
-    let t2 = 
+    let t2 =
       match x with
       | "+" -> [OpAdd]
       | "-" -> [OpSub]
@@ -307,7 +307,7 @@ let rec compile sexp =
       | "<=" -> [OpLeq]
       | ">" -> [OpGt]
       | ">=" -> [OpGeq]
-      | _ -> [OpCall(x, List.length t1)] in
+      | _ -> [OpCall(x, List.length xs)] in
     List.append t1 t2
   | _ ->
     Printf.printf "given: %s\n" @@ show_sexpObject sexp;
