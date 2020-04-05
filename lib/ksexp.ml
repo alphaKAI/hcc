@@ -39,6 +39,7 @@ let next_bracket code left_offset =
 
   let rec loop index left_count right_count =
     if index < String.length code && left_count <> right_count then
+      let open Char in
       if String.get code index = '(' then
         loop (index + 1) (left_count + 1) right_count
       else if String.get code index = ')' then
@@ -68,6 +69,7 @@ let rec parse_list str =
       j in
   let j = loop 0 in 
   add_ref_int i j;
+  let open Char in
   assert (String.get str !i = ')');
   add_ref_int i 1;
   {
@@ -77,8 +79,8 @@ let rec parse_list str =
 
 and skip_line str =
   let str_len = String.length str in
-  let rec loop i =
-    if i < str_len && str.[i] <> '\n' then
+  let rec loop (i: int) =
+    if i < str_len && not (Char.equal str.[i] '\n') then
       loop @@ i + 1
     else
       i in
@@ -90,10 +92,11 @@ and skip_line str =
 
 and parse_number str = 
   let dot_next_is_number str str_len i =
-    (str.[i] = '.' && i + 1 < str_len && is_digit(str.[i + 1])) in
+    ((Char.equal str.[i] '.') && i + 1 < str_len && is_digit(str.[i + 1])) in
   let i = ref 0 in
   let str_len = String.length str in
   let first =
+    let open Char in
     if String.get str 0 = '-' then begin
       add_ref_int i 1;
       1
@@ -119,7 +122,7 @@ and parse_symbol str =
   let str_len = String.length str in
 
   let rec loop i =
-    if i < str_len && (is_alpha str.[i] || CharSet.exists symbol_chars ~f:((=) str.[i])) then
+    if i < str_len && (is_alpha str.[i] || CharSet.exists symbol_chars ~f:(Char.(=) str.[i])) then
       loop @@ i + 1
     else
       i in
@@ -135,7 +138,7 @@ and parse_string str =
   let str_len = String.length str in
 
   let rec loop i =
-    if i < str_len && str.[i] <> '\"' then
+    if i < str_len && not (Char.equal str.[i] '\"') then
       loop @@ i + 1
     else
       i in
@@ -167,31 +170,31 @@ and sexp_parseExpr code =
           let t = skip_line @@ String.slice code i 0 in
           t.read_len in
         loop @@ i + j
-      | c when is_digit c || (c = '-' && i + 1 < code_len && is_digit code.[i + 1]) ->
+      | c when is_digit c || ((Char.equal c '-') && i + 1 < code_len && is_digit code.[i + 1]) ->
         let result = parse_number @@ String.slice code i 0 in
         {
           parse_result = result.parse_result;
           read_len = i + result.read_len
         }
-      | c when is_alpha c || CharSet.exists ~f:((=) c) symbol_chars ->
+      | c when is_alpha c || CharSet.exists ~f:(Char.(=) c) symbol_chars ->
         let result = parse_symbol @@ String.slice code i 0 in
         {
           parse_result = result.parse_result;
           read_len = i + result.read_len
         }
-      | c when c = '\"' ->
+      | c when Char.equal c '\"' ->
         let result = parse_string @@ String.slice code i 0 in
         {
           parse_result = result.parse_result;
           read_len = i + result.read_len
         }
-      | c when c = '(' ->
+      | c when Char.equal c '(' ->
         let result = parse_list @@ String.slice code i 0 in
         {
           parse_result = result.parse_result;
           read_len = i + result.read_len
         }
-      | c when c = '\'' ->
+      | c when Char.equal c '\'' ->
         let result = parse_quote @@ String.slice code i 0 in
         {
           parse_result = result.parse_result;

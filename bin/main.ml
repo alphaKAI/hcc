@@ -43,4 +43,4 @@ let command =
       | Some fn -> fun () -> run_with_file fn
       | None -> fun () -> ())
 
-let _ = Command.run command 
+let () = Command.run command 

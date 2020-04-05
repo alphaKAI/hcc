@@ -131,6 +131,7 @@ let is_string t =
   else
     let c1 = String.get t 0
     and c2 = String.get t (String.length t - 1) in
+    let open Char in
     c1 = '\"' && c1 = c2
 
 let fail_invalid ?(msg=None) = 
@@ -151,7 +152,7 @@ let rec compile sexp =
     -> [OpPush (VValue sexp)]
   | Symbol sym
     -> [OpGetVar sym]
-  | List (Symbol x :: xs) when x = "def-var" ->
+  | List (Symbol x :: xs) when String.equal x "def-var" ->
     if List.length xs = 2 then
       let e1 = List.nth_exn xs 0 |> function
         | Symbol v -> v
@@ -161,7 +162,7 @@ let rec compile sexp =
       List.append e2_compiled [OpVarDef e1]
     else
       fail_invalid ~msg:(Some "def-var<2>")
-  | List (Symbol x :: xs) when x = "def-fun" ->
+  | List (Symbol x :: xs) when String.equal x "def-fun" ->
     if List.length xs = 3 then
       let func_name = List.nth_exn xs 0 |> function
         | Symbol v -> v
@@ -191,7 +192,7 @@ let rec compile sexp =
             | OpGetVar var_name
             | OpSetVar var_name ->
               let arg_names = List.rev arg_names in
-              let found = List.findi ~f:(fun _ e -> e = var_name) arg_names in
+              let found = List.findi ~f:(fun _ e -> String.equal e var_name) arg_names in
               let arg_names_len = List.length arg_names in
               begin match found with
                 | None ->
@@ -201,7 +202,7 @@ let rec compile sexp =
                         list_add_ref lvars var_name;
                         Some (List.length !lvars - 1)
                       end else begin
-                        List.findi ~f:(fun _ lvar_name -> var_name = lvar_name) !lvars |> function
+                        List.findi ~f:(fun _ lvar_name -> String.equal var_name lvar_name) !lvars |> function
                         | None -> None
                         | Some (i, _) -> Some i
                       end in
@@ -212,7 +213,7 @@ let rec compile sexp =
                       OpSetLocal lvar_idx'
                   else
                     let found_lvar_idx =
-                      List.findi ~f:(fun _ lvar_name -> var_name = lvar_name) !lvars |> function
+                      List.findi ~f:(fun _ lvar_name -> String.equal var_name lvar_name) !lvars |> function
                       | None -> None
                       | Some (i, _) -> Some i in
                     begin match found_lvar_idx with
@@ -244,7 +245,7 @@ let rec compile sexp =
       [OpFuncDef vmf]
     else
       fail_invalid ~msg:(Some "def-fun<4>")
-  | List (Symbol x :: xs) when x = "if" ->
+  | List (Symbol x :: xs) when String.equal x "if" ->
     if List.length xs >= 2 then
       let cond_ins = List.nth_exn xs 0 |> compile in
       let tBlock_ins = List.nth_exn xs 1 |> compile in
@@ -262,12 +263,12 @@ let rec compile sexp =
         ret
     else
       fail_invalid ~msg:(Some "if")
-  | List (Symbol x :: xs) when x = "begin" ->
+  | List (Symbol x :: xs) when String.equal x "begin" ->
     if List.length xs >= 1 then
       (List.map ~f:compile >> List.concat) xs
     else
       fail_invalid ~msg:(Some "begin")
-  | List (Symbol x :: xs) when x = "while" ->
+  | List (Symbol x :: xs) when String.equal x "while" ->
     if List.length xs = 2 then
       let cond_ins = List.nth_exn xs 0 |> compile
       and expr_ins = List.nth_exn xs 1 |> compile in
@@ -283,7 +284,7 @@ let rec compile sexp =
       List.append cond_with_branch expr_ins
     else
       fail_invalid ~msg:(Some "while")
-  | List (Symbol x :: xs) when x = "for" ->
+  | List (Symbol x :: xs) when String.equal x "for" ->
     (* (for init cond update expr) -> init [cond_with_branch: cond, block_ins: [expr, update]] *)
     if List.length xs = 4 then
       let init_ins = List.nth_exn xs 0 |> compile
@@ -304,7 +305,7 @@ let rec compile sexp =
       init_ins @ cond_with_branch @ block_ins
     else
       fail_invalid ~msg:(Some "for")
-  | List (Symbol x :: xs) when x = "set" ->
+  | List (Symbol x :: xs) when String.equal x "set" ->
     if List.length xs = 2 then
       let var_name = List.nth_exn xs 0 |> function
         | Symbol t -> t
