@@ -283,6 +283,27 @@ let rec compile sexp =
       List.append cond_with_branch expr_ins
     else
       fail_invalid ~msg:(Some "while")
+  | List (Symbol x :: xs) when x = "for" ->
+    (* (for init cond update expr) -> init [cond_with_branch: cond, block_ins: [expr, update]] *)
+    if List.length xs = 4 then
+      let init_ins = List.nth_exn xs 0 |> compile
+      and cond_ins = List.nth_exn xs 1 |> compile
+      and update_ins = List.nth_exn xs 2 |> compile
+      and expr_ins = List.nth_exn xs 3 |> compile in
+      (* offset *)
+      let jmp_offset =
+        -(
+          opCodes_len cond_ins +
+          2 (* branch *) +
+          opCodes_len expr_ins +
+          opCodes_len update_ins +
+          2 (* jump to top *)
+        ) in
+      let block_ins =  expr_ins @ update_ins @ [OpJumpRel jmp_offset] in
+      let cond_with_branch = List.append cond_ins [OpBranch (opCodes_len block_ins)] in
+      init_ins @ cond_with_branch @ block_ins
+    else
+      fail_invalid ~msg:(Some "for")
   | List (Symbol x :: xs) when x = "set" ->
     if List.length xs = 2 then
       let var_name = List.nth_exn xs 0 |> function
