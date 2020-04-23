@@ -83,38 +83,7 @@ let opCode_kind = (function
     | OpSetArgFrom _ -> 29
     | OpDumpEnv -> 30) >> Int64.of_int
 
-let opCode_width = function
-  | OpPop -> 1
-  | OpPush _ -> 2
-  | OpAllocLvars _ -> 2
-  | OpFreeVars -> 1
-  | OpGetLocal _ -> 2
-  | OpSetLocal _ -> 2
-  | OpSetArgLocal _ -> 2
-  | OpAdd -> 1
-  | OpSub -> 1
-  | OpMul -> 1
-  | OpDiv -> 1
-  | OpMod -> 1
-  | OpEq -> 1
-  | OpNeq -> 1
-  | OpLt -> 1
-  | OpLeq -> 1
-  | OpGt -> 1
-  | OpGeq -> 1
-  | OpPrint -> 1
-  | OpPrintln -> 1
-  | OpJumpRel _ -> 2
-  | OpFuncDef _ -> 2
-  | OpCall _ -> 3
-  | OpReturn -> 1
-  | OpVarDef _ -> 2
-  | OpGetVar _ -> 2
-  | OpSetVar _ -> 2
-  | OpBranch _ -> 2
-  | OpMakeList _ -> 2
-  | OpSetArgFrom _ -> 3
-  | OpDumpEnv -> 1
+let opCode_width (_: opCode) = 1
 
 let opCodes_len = List.map ~f:opCode_width >> List.fold ~init:0 ~f:(fun k v -> k + v)
 
@@ -276,8 +245,8 @@ let rec compile sexp =
       (* offset *)
       let jmp_offset =
         -(
-          opCodes_len expr_ins + 2 (* this jump *) +
-          opCodes_len cond_ins + 2 (* branch *)
+          opCodes_len expr_ins + 1 (* this jump *) +
+          opCodes_len cond_ins + 1 (* branch *)
         ) in
       let expr_ins = expr_ins @ [OpJumpRel jmp_offset] in
 
@@ -296,10 +265,10 @@ let rec compile sexp =
       let jmp_offset =
         -(
           opCodes_len cond_ins +
-          2 (* branch *) +
+          1 (* branch *) +
           opCodes_len expr_ins +
           opCodes_len update_ins +
-          2 (* jump to top *)
+          1 (* jump to top *)
         ) in
       let block_ins =  expr_ins @ update_ins @ [OpJumpRel jmp_offset] in
       let cond_with_branch = List.append cond_ins [OpBranch (opCodes_len block_ins)] in
