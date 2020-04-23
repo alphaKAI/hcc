@@ -15,12 +15,6 @@ let numeric_to_lower v =
 
 let run_with_file file_name =
   let compile_result = compile_from_file file_name in
-  Printf.printf "[";
-  List.iteri ~f:(fun i d ->
-      if i > 0 then
-        Printf.printf "; ";
-      Printf.printf "%s" (show_opCode d)) compile_result;
-  Printf.printf "]\n";
   let serialized = serialize_opCodes compile_result in
   let dst_name = file_name ^ ".compiled" in
   Printf.printf "result: [%s]\n" (List.map ~f:show_opCode compile_result |> String.concat ~sep:"; ");

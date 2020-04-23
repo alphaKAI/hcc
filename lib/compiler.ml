@@ -251,10 +251,11 @@ let rec compile sexp =
       let tBlock_ins = List.nth_exn xs 1 |> compile in
       let tBlock_len = opCodes_len tBlock_ins in
       (* offset *)
-      let ret = List.append cond_ins @@ OpBranch (tBlock_len +
-                                                  if List.length xs = 3 (* if fBlock exists, jump offset include amount of jump ins *) then
-                                                    (opCode_width @@ OpJumpRel(0))
-                                                  else 0) :: tBlock_ins in
+      let offset = tBlock_len +
+                   if List.length xs = 3 (* if fBlock exists, jump offset include amount of jump ins *) then
+                     (opCode_width @@ OpJumpRel(0))
+                   else 0 in
+      let ret = List.append cond_ins (OpBranch offset :: tBlock_ins) in
       if List.length xs = 3 then (* exist fBlock *)
         let fBlock_ins = List.nth_exn xs 2 |> compile in
         let fBlock_len = opCodes_len fBlock_ins in
